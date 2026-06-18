@@ -4,7 +4,7 @@ import com.romisspa.app.domain.model.Cita
 import com.romisspa.app.domain.repository.SpaRepository
 
 class DeleteCitaUseCase(private val repository: SpaRepository) {
-    operator fun invoke(cita: Cita) {
+    suspend operator fun invoke(cita: Cita) {
         repository.deleteCita(cita)
     }
 }

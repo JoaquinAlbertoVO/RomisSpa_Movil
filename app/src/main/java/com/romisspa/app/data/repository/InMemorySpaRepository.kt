@@ -6,6 +6,7 @@ import com.romisspa.app.domain.model.Cliente
 import com.romisspa.app.domain.model.Servicio
 import com.romisspa.app.domain.repository.SpaRepository
 import com.romisspa.app.ui.theme.WarmGold
+import kotlinx.coroutines.delay
 
 class InMemorySpaRepository : SpaRepository {
     private val _servicios = mutableStateListOf(
@@ -30,23 +31,49 @@ class InMemorySpaRepository : SpaRepository {
         Cliente("Elena Rivas", "922 113 344", "01 Nov 2023", 12)
     )
 
-    override fun getServicios(): List<Servicio> = _servicios
-    override fun addServicio(servicio: Servicio) { _servicios.add(servicio) }
-    override fun updateServicio(servicio: Servicio) {
+    override suspend fun getServicios(): List<Servicio> {
+        delay(500) // Simular red
+        return _servicios
+    }
+    
+    override suspend fun addServicio(servicio: Servicio) { 
+        delay(500)
+        _servicios.add(servicio) 
+    }
+    
+    override suspend fun updateServicio(servicio: Servicio) {
+        delay(500)
         val index = _servicios.indexOfFirst { it.nombre == servicio.nombre }
         if (index != -1) _servicios[index] = servicio
     }
 
-    override fun deleteServicio(servicio: Servicio) {
+    override suspend fun deleteServicio(servicio: Servicio) {
+        delay(500)
         _servicios.remove(servicio)
     }
 
-    override fun getCitas(): List<Cita> = _citas
-    override fun addCita(cita: Cita) { _citas.add(cita) }
-    override fun deleteCita(cita: Cita) { _citas.remove(cita) }
+    override suspend fun getCitas(): List<Cita> {
+        delay(500)
+        return _citas
+    }
+    
+    override suspend fun addCita(cita: Cita) { 
+        delay(500)
+        _citas.add(cita) 
+    }
+    
+    override suspend fun deleteCita(cita: Cita) { 
+        delay(500)
+        _citas.remove(cita) 
+    }
 
-    override fun getClientes(): List<Cliente> = _clientes
-    override fun addOrUpdateCliente(cliente: Cliente) {
+    override suspend fun getClientes(): List<Cliente> {
+        delay(500)
+        return _clientes
+    }
+    
+    override suspend fun addOrUpdateCliente(cliente: Cliente) {
+        delay(500)
         val index = _clientes.indexOfFirst { it.nombre.equals(cliente.nombre, ignoreCase = true) }
         if (index != -1) {
             _clientes[index] = cliente

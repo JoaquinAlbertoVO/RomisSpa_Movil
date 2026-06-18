@@ -4,5 +4,5 @@ import com.romisspa.app.domain.model.Cliente
 import com.romisspa.app.domain.repository.SpaRepository
 
 class GetClientesUseCase(private val repository: SpaRepository) {
-    operator fun invoke(): List<Cliente> = repository.getClientes()
+    suspend operator fun invoke(): List<Cliente> = repository.getClientes()
 }

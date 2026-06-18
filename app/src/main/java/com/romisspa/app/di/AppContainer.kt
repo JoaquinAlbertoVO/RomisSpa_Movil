@@ -6,7 +6,9 @@ import com.romisspa.app.presentation.screens.citas.CitasViewModel
 import com.romisspa.app.presentation.screens.clientes.ClientesViewModel
 
 class AppContainer {
-    private val repositoryModule = RepositoryModule()
+    // Necesitamos el modulo de red para el repositorio de producción
+    private val networkModule = NetworkModule()
+    private val repositoryModule = RepositoryModule(networkModule)
     private val useCaseModule = UseCaseModule(repositoryModule)
 
     val reservaViewModel by lazy {

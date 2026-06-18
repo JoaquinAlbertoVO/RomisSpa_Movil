@@ -1,4 +1,4 @@
-package com.romisspa.app.screens
+package com.romisspa.app.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn

@@ -8,7 +8,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.romisspa.app.di.AppContainer
-import com.romisspa.app.presentation.screens.*
+import com.romisspa.app.presentation.screens.LoginScreen
+import com.romisspa.app.presentation.screens.DashboardScreen
 import com.romisspa.app.presentation.screens.reserva.ReservaScreen
 import com.romisspa.app.presentation.screens.servicios.ServiciosScreen
 import com.romisspa.app.presentation.screens.citas.CitasScreen

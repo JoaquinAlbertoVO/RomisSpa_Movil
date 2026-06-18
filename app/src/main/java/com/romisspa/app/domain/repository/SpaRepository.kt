@@ -5,15 +5,15 @@ import com.romisspa.app.domain.model.Cliente
 import com.romisspa.app.domain.model.Servicio
 
 interface SpaRepository {
-    fun getServicios(): List<Servicio>
-    fun addServicio(servicio: Servicio)
-    fun updateServicio(servicio: Servicio)
-    fun deleteServicio(servicio: Servicio)
+    suspend fun getServicios(): List<Servicio>
+    suspend fun addServicio(servicio: Servicio)
+    suspend fun updateServicio(servicio: Servicio)
+    suspend fun deleteServicio(servicio: Servicio)
     
-    fun getCitas(): List<Cita>
-    fun addCita(cita: Cita)
-    fun deleteCita(cita: Cita)
+    suspend fun getCitas(): List<Cita>
+    suspend fun addCita(cita: Cita)
+    suspend fun deleteCita(cita: Cita)
 
-    fun getClientes(): List<Cliente>
-    fun addOrUpdateCliente(cliente: Cliente)
+    suspend fun getClientes(): List<Cliente>
+    suspend fun addOrUpdateCliente(cliente: Cliente)
 }

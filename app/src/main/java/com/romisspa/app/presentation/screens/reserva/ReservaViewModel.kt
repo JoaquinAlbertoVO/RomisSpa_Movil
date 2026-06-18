@@ -3,6 +3,7 @@ package com.romisspa.app.presentation.screens.reserva
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.romisspa.app.domain.model.Cita
+import com.romisspa.app.domain.model.Servicio
 import com.romisspa.app.domain.usecase.SpaUseCases
 import com.romisspa.app.presentation.event.EventBus
 import com.romisspa.app.presentation.event.UiEvent
@@ -19,7 +20,23 @@ class ReservaViewModel(
     private val _uiState = MutableStateFlow(ReservaUiState())
     val uiState = _uiState.asStateFlow()
 
-    val serviciosAvailable = useCases.getServicios()
+    private val _serviciosAvailable = MutableStateFlow<List<Servicio>>(emptyList())
+    val serviciosAvailable = _serviciosAvailable.asStateFlow()
+
+    init {
+        loadServicios()
+    }
+
+    private fun loadServicios() {
+        viewModelScope.launch {
+            try {
+                val servicios = useCases.getServicios()
+                _serviciosAvailable.value = servicios
+            } catch (e: Exception) {
+                EventBus.send(UiEvent.Error("Error al cargar servicios: ${e.message}"))
+            }
+        }
+    }
 
     fun onNombreChange(value: String) {
         _uiState.update { it.copy(clienteNombre = value) }
