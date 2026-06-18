@@ -1,0 +1,10 @@
+package com.romisspa.app.domain.usecase
+
+import com.romisspa.app.domain.model.Cita
+import com.romisspa.app.domain.repository.SpaRepository
+
+class AddCitaUseCase(private val repository: SpaRepository) {
+    operator fun invoke(cita: Cita) {
+        repository.addCita(cita)
+    }
+}
