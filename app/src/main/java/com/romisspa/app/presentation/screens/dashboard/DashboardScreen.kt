@@ -1,4 +1,4 @@
-package com.romisspa.app.presentation.screens
+package com.romisspa.app.presentation.screens.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween

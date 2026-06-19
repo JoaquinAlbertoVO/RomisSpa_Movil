@@ -1,29 +1,16 @@
 package com.romisspa.app.di
 
-import com.romisspa.app.presentation.screens.reserva.ReservaViewModel
-import com.romisspa.app.presentation.screens.servicios.ServiciosViewModel
-import com.romisspa.app.presentation.screens.citas.CitasViewModel
-import com.romisspa.app.presentation.screens.clientes.ClientesViewModel
-
 class AppContainer {
-    // Necesitamos el modulo de red para el repositorio de producción
     private val networkModule = NetworkModule()
     private val repositoryModule = RepositoryModule(networkModule)
     private val useCaseModule = UseCaseModule(repositoryModule)
+    
+    // Agregamos ViewModelModule siguiendo la estructura de myBook2
+    val viewModelModule = ViewModelModule(useCaseModule)
 
-    val reservaViewModel by lazy {
-        ReservaViewModel(useCaseModule.spaUseCases)
-    }
-
-    val serviciosViewModel by lazy {
-        ServiciosViewModel(useCaseModule.spaUseCases)
-    }
-
-    val citasViewModel by lazy {
-        CitasViewModel(useCaseModule.spaUseCases)
-    }
-
-    val clientesViewModel by lazy {
-        ClientesViewModel(useCaseModule.spaUseCases)
-    }
+    // Los ViewModels ahora se obtienen a través del ViewModelModule
+    val reservaViewModel by lazy { viewModelModule.provideReservaViewModel() }
+    val serviciosViewModel by lazy { viewModelModule.provideServiciosViewModel() }
+    val citasViewModel by lazy { viewModelModule.provideCitasViewModel() }
+    val clientesViewModel by lazy { viewModelModule.provideClientesViewModel() }
 }
