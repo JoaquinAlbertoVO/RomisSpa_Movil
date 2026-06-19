@@ -23,8 +23,9 @@ class RetrofitSpaRepository(
         val request = CreateServicioRequest(
             nombre = servicio.nombre,
             descripcion = servicio.descripcion,
-            precio = servicio.precio,
-            imagenRes = servicio.imagenRes
+            // Convertimos "S/ 45.00" a número 45.00
+            precio = servicio.precio.replace("S/ ", "").toDoubleOrNull() ?: 0.0,
+            imagenRes = null // El modelo Servicio no tiene imagen
         )
         remoteDataSource.addServicio(request)
     }
@@ -33,8 +34,9 @@ class RetrofitSpaRepository(
         val request = UpdateServicioRequest(
             nombre = servicio.nombre,
             descripcion = servicio.descripcion,
-            precio = servicio.precio,
-            imagenRes = servicio.imagenRes
+            // Convertimos "S/ 45.00" a número 45.00
+            precio = servicio.precio.replace("S/ ", "").toDoubleOrNull() ?: 0.0,
+            imagenRes = null // El modelo Servicio no tiene imagen
         )
         remoteDataSource.updateServicio(request)
     }
@@ -58,8 +60,8 @@ class RetrofitSpaRepository(
     }
 
     override suspend fun deleteCita(cita: Cita) {
-        // Usamos el cliente como identificador para el borrado (Partition Key en DynamoDB)
-        remoteDataSource.deleteCita(cita.cliente)
+        // Usamos el ID único para borrar la cita correctamente
+        remoteDataSource.deleteCita(cita.id)
     }
 
     override suspend fun getClientes(): List<Cliente> {

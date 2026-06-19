@@ -7,6 +7,7 @@ import com.romisspa.app.domain.model.Servicio
 import com.romisspa.app.domain.repository.SpaRepository
 import com.romisspa.app.ui.theme.WarmGold
 import kotlinx.coroutines.delay
+import java.util.UUID
 
 class InMemorySpaRepository : SpaRepository {
     private val _servicios = mutableStateListOf(
@@ -19,8 +20,8 @@ class InMemorySpaRepository : SpaRepository {
     )
 
     private val _citas = mutableStateListOf(
-        Cita("Ana García", "Manicure Completa", "Hoy", "10:00 AM", "Pendiente", WarmGold),
-        Cita("Beatriz López", "Corte y Peinado", "Hoy", "02:00 PM", "Pendiente", WarmGold)
+        Cita(id = UUID.randomUUID().toString(), cliente = "Ana García", servicio = "Manicure Completa", fecha = "Hoy", hora = "10:00 AM", estado = "Pendiente", colorEstado = WarmGold),
+        Cita(id = UUID.randomUUID().toString(), cliente = "Beatriz López", servicio = "Corte y Peinado", fecha = "Hoy", hora = "02:00 PM", estado = "Pendiente", colorEstado = WarmGold)
     )
 
     private val _clientes = mutableStateListOf(
@@ -32,7 +33,7 @@ class InMemorySpaRepository : SpaRepository {
     )
 
     override suspend fun getServicios(): List<Servicio> {
-        delay(500) // Simular red
+        delay(500)
         return _servicios
     }
     
@@ -59,12 +60,13 @@ class InMemorySpaRepository : SpaRepository {
     
     override suspend fun addCita(cita: Cita) { 
         delay(500)
-        _citas.add(cita) 
+        val citaConId = if (cita.id.isEmpty()) cita.copy(id = UUID.randomUUID().toString()) else cita
+        _citas.add(citaConId) 
     }
     
     override suspend fun deleteCita(cita: Cita) { 
         delay(500)
-        _citas.remove(cita) 
+        _citas.removeAll { it.id == cita.id }
     }
 
     override suspend fun getClientes(): List<Cliente> {

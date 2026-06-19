@@ -33,6 +33,7 @@ fun ReservaScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val serviciosAvailable by viewModel.serviciosAvailable.collectAsState()
     var visible by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
 
@@ -94,7 +95,7 @@ fun ReservaScreen(
 
                 DropdownSpa(
                     label = "Selecciona un servicio",
-                    options = viewModel.serviciosAvailable.map { it.nombre },
+                    options = serviciosAvailable.map { it.nombre },
                     selected = uiState.servicioSelected,
                     onSelect = viewModel::onServicioChange,
                     icon = { Icon(Icons.Default.Spa, null, tint = RoseGold) }

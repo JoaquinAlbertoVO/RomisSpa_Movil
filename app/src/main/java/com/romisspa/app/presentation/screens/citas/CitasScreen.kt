@@ -59,7 +59,10 @@ fun CitasScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(uiState.citas) { cita ->
-                            CitaItem(cita)
+                            CitaItem(
+                                cita = cita,
+                                onDelete = { viewModel.deleteCita(cita) }
+                            )
                         }
                     }
                 }
@@ -81,7 +84,10 @@ fun CitasScreen(
 }
 
 @Composable
-fun CitaItem(cita: Cita) {
+fun CitaItem(
+    cita: Cita,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -146,7 +152,7 @@ fun CitaItem(cita: Cita) {
                     DropdownMenuItem(
                         text = { Text("Eliminar Cita", color = Color.Red) },
                         onClick = {
-                            // TODO: Implement delete in CitasViewModel if needed
+                            onDelete()
                             showOptions = false
                         }
                     )
