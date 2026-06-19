@@ -33,4 +33,19 @@ class CitasViewModel(
             }
         }
     }
+
+    fun deleteCita(cita: com.romisspa.app.domain.model.Cita) {
+        viewModelScope.launch {
+            try {
+                useCases.deleteCita(cita)
+                // Actualizamos la lista localmente para una respuesta rápida
+                _uiState.update { state ->
+                    state.copy(citas = state.citas.filter { it != cita })
+                }
+                EventBus.send(UiEvent.Success("Cita eliminada correctamente"))
+            } catch (e: Exception) {
+                EventBus.send(UiEvent.Error("No se pudo eliminar la cita: ${e.message}"))
+            }
+        }
+    }
 }
