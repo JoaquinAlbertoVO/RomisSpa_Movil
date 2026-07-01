@@ -33,6 +33,10 @@ fun ClientesScreen(
     viewModel: ClientesViewModel,
     onBack: () -> Unit
 ) {
+    //Esto obligará a la app a consultar a AWS cada vez que entres a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.getClientes() // El método de tu ViewModel para recargar
+    }
     val uiState by viewModel.uiState.collectAsState()
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }

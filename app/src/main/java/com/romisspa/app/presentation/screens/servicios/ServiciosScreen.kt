@@ -29,6 +29,10 @@ fun ServiciosScreen(
     viewModel: ServiciosViewModel,
     onBack: () -> Unit
 ) {
+    //Esto obligará a la app a consultar a AWS cada vez que entres a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.getServicios()
+    }
     val uiState by viewModel.uiState.collectAsState()
     var visible by remember { mutableStateOf(false) }
 

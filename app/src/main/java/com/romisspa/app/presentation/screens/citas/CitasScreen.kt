@@ -30,6 +30,10 @@ fun CitasScreen(
     onAddCita: () -> Unit,
     onBack: () -> Unit
 ) {
+    //Esto obligará a la app a consultar a AWS cada vez que entres a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.getCitas() // El método de tu ViewModel para recargar
+    }
     val uiState by viewModel.uiState.collectAsState()
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
