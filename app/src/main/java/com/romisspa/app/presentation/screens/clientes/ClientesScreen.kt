@@ -28,85 +28,228 @@ import androidx.compose.ui.unit.sp
 import com.romisspa.app.domain.model.Cliente
 import com.romisspa.app.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientesScreen(
     viewModel: ClientesViewModel,
     onBack: () -> Unit
 ) {
-    //Esto obligará a la app a consultar a AWS cada vez que entres a la pantalla
     LaunchedEffect(Unit) {
-        viewModel.getClientes() // El método de tu ViewModel para recargar
+        viewModel.getClientes()
     }
     val uiState by viewModel.uiState.collectAsState()
     var visible by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
     LaunchedEffect(Unit) { visible = true }
 
     val filteredClientes = uiState.clientes.filter {
         it.nombre.contains(uiState.searchText, ignoreCase = true) || it.telefono.contains(uiState.searchText)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(colors = listOf(Cream, CreamDark)))
+                .padding(paddingValues)
         ) {
-            // Buscador
-            OutlinedTextField(
-                value = uiState.searchText,
-                onValueChange = viewModel::onSearchTextChange,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Buscar cliente por nombre o teléfono...") },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = GreyWarm) },
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = RoseGold,
-                    unfocusedBorderColor = RoseGoldLight
-                )
-            )
-
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(tween(500)) + slideInVertically(initialOffsetY = { 50 })
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(colors = listOf(Cream, CreamDark)))
             ) {
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = RoseGold)
-                    }
-                } else if (filteredClientes.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "No se encontraron clientes", color = GreyWarm)
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(filteredClientes) { cliente ->
-                            ClienteItem(cliente)
+                // Buscador
+                OutlinedTextField(
+                    value = uiState.searchText,
+                    onValueChange = viewModel::onSearchTextChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text("Buscar cliente por nombre o teléfono...") },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = GreyWarm) },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RoseGold,
+                        unfocusedBorderColor = RoseGoldLight
+                    )
+                )
+
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(tween(500)) + slideInVertically(initialOffsetY = { 50 })
+                ) {
+                    if (uiState.isLoading && uiState.clientes.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = RoseGold)
+                        }
+                    } else if (filteredClientes.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(text = "No se encontraron clientes", color = GreyWarm)
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(filteredClientes) { cliente ->
+                                ClienteItem(cliente)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Botón Flotante para añadir cliente
-        FloatingActionButton(
-            onClick = { /* TODO: Implementar AddClienteDialog */ },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp),
-            containerColor = RoseGold,
-            contentColor = White
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Añadir Cliente")
+            // Botón Flotante Activo
+            FloatingActionButton(
+                onClick = {
+                    viewModel.clearError()
+                    showAddDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp),
+                containerColor = RoseGold,
+                contentColor = White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Añadir Cliente")
+            }
+
+            // Llamada al Diálogo Emergente
+            if (showAddDialog) {
+                AddClienteDialog(
+                    errorMessage = uiState.error,
+                    isLoading = uiState.isLoading,
+                    onDismiss = { showAddDialog = false },
+                    onConfirm = { nombre, telefono ->
+                        viewModel.insertarCliente(nombre, telefono, onSuccess = {
+                            showAddDialog = false
+                        })
+                    }
+                )
+            }
         }
     }
 }
 
+@Composable
+fun AddClienteDialog(
+    errorMessage: String?,
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var nombre by remember { mutableStateOf("") }
+    var telefono by remember { mutableStateOf("") }
+
+    // Estados locales para controlar el error visual de cada campo
+    var nombreError by remember { mutableStateOf<String?>(null) }
+    var telefonoError by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Nuevo Cliente", fontWeight = FontWeight.Bold, color = CharcoalSoft) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                // 1. Campo de Nombre con validación nativa
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = {
+                        nombre = it
+                        // Limpia el error mientras escribe si ya es válido
+                        val regexNombre = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]*$".toRegex()
+                        nombreError = if (!it.matches(regexNombre)) {
+                            "El nombre solo puede contener letras."
+                        } else {
+                            null
+                        }
+                    },
+                    label = { Text("Nombre Completo") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    isError = nombreError != null,
+                    supportingText = {
+                        if (nombreError != null) {
+                            Text(text = nombreError!!, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold)
+                )
+
+                // 2. Campo de Teléfono con validación nativa
+                OutlinedTextField(
+                    value = telefono,
+                    onValueChange = {
+                        telefono = it
+                        // Limpia o activa el error según los dígitos
+                        val regexTelefono = "^[0-9]*$".toRegex()
+                        telefonoError = when {
+                            !it.matches(regexTelefono) -> "El teléfono solo puede contener números."
+                            it.length > 9 -> "El teléfono no puede tener más de 9 dígitos."
+                            else -> null
+                        }
+                    },
+                    label = { Text("Teléfono / Celular") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    isError = telefonoError != null,
+                    supportingText = {
+                        if (telefonoError != null) {
+                            Text(text = telefonoError!!, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold)
+                )
+
+                if (isLoading) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        color = RoseGold
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val nombreLimpio = nombre.trim()
+                    val telefonoLimpio = telefono.trim()
+
+                    // Validaciones finales antes de enviar
+                    val regexNombre = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$".toRegex()
+                    val regexTelefono = "^[0-9]{9}$".toRegex()
+
+                    if (!nombreLimpio.matches(regexNombre)) {
+                        nombreError = "El nombre solo puede contener letras."
+                    }
+                    if (!telefonoLimpio.matches(regexTelefono)) {
+                        telefonoError = "El teléfono debe tener exactamente 9 dígitos."
+                    }
+
+                    // Si no hay errores locales, procedemos a guardar
+                    if (nombreError == null && telefonoError == null && nombreLimpio.isNotBlank() && telefonoLimpio.isNotBlank()) {
+                        onConfirm(nombre, telefono)
+                    }
+                },
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = RoseGold)
+            ) {
+                Text("Guardar", color = White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
+                Text("Cancelar", color = GreyWarm)
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = White
+    )
+}
 @Composable
 fun ClienteItem(cliente: Cliente) {
     Card(
@@ -121,7 +264,6 @@ fun ClienteItem(cliente: Cliente) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar con inicial
             Box(
                 modifier = Modifier
                     .size(45.dp)
@@ -178,10 +320,7 @@ fun ClienteItem(cliente: Cliente) {
                     ) {
                         DropdownMenuItem(
                             text = { Text("Eliminar Cliente", color = Color.Red) },
-                            onClick = {
-                                // TODO: Implement delete in ClientesViewModel if needed
-                                showOptions = false
-                            }
+                            onClick = { showOptions = false }
                         )
                     }
                 }

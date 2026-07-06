@@ -6,7 +6,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -18,14 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.romisspa.app.ui.theme.*
@@ -36,9 +31,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     var email       by remember { mutableStateOf("") }
     var password    by remember { mutableStateOf("") }
     var showPass    by remember { mutableStateOf(false) }
-    var emailError  by remember { mutableStateOf(false) }
-    var passError   by remember { mutableStateOf(false) }
+
+    // Cambiados a String? para manejar mensajes de error específicos
+    var emailError  by remember { mutableStateOf<String?>(null) }
+    var passError   by remember { mutableStateOf<String?>(null) }
     var visible     by remember { mutableStateOf(false) }
+
+    // Credenciales del Administrador únicas
+    val adminEmail = "admin@romisspa.com"
+    val adminPassword = "admin123"
 
     LaunchedEffect(Unit) { visible = true }
 
@@ -80,22 +81,30 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         Text(text  = "Iniciar Sesión", style = MaterialTheme.typography.headlineMedium, color = CharcoalSoft)
                         Spacer(Modifier.height(28.dp))
 
+                        // Campo Correo
                         OutlinedTextField(
                             value = email,
-                            onValueChange = { email = it; emailError = false },
+                            onValueChange = { email = it; emailError = null },
                             label = { Text("Correo electrónico") },
                             leadingIcon = { Icon(Icons.Default.Person, null, tint = RoseGold) },
-                            isError = emailError,
+                            isError = emailError != null,
+                            supportingText = {
+                                if (emailError != null) {
+                                    Text(text = emailError!!, color = MaterialTheme.colorScheme.error)
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            singleLine = true
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight)
                         )
 
                         Spacer(Modifier.height(16.dp))
 
+                        // Campo Contraseña
                         OutlinedTextField(
                             value = password,
-                            onValueChange = { password = it; passError = false },
+                            onValueChange = { password = it; passError = null },
                             label = { Text("Contraseña") },
                             leadingIcon = { Icon(Icons.Default.Lock, null, tint = RoseGold) },
                             trailingIcon = {
@@ -103,19 +112,50 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                                     Icon(if (showPass) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = GreyWarm)
                                 }
                             },
-                            isError = passError,
+                            isError = passError != null,
+                            supportingText = {
+                                if (passError != null) {
+                                    Text(text = passError!!, color = MaterialTheme.colorScheme.error)
+                                }
+                            },
                             visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            singleLine = true
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight)
                         )
 
                         Spacer(Modifier.height(32.dp))
 
+                        // Botón Ingresar con validaciones estrictas
                         Button(
                             onClick = {
-                                if (email.isNotBlank() && password.isNotBlank()) onLoginSuccess()
-                                else { emailError = email.isBlank(); passError = password.isBlank() }
+                                val emailLimpio = email.trim()
+                                var todoValido = true
+
+                                // 1. Validar campos vacíos
+                                if (emailLimpio.isBlank()) {
+                                    emailError = "El correo no puede estar vacío."
+                                    todoValido = false
+                                }
+                                if (password.isBlank()) {
+                                    passError = "La contraseña no puede estar vacía."
+                                    todoValido = false
+                                }
+
+                                // 2. Si no están vacíos, validar credenciales del administrador
+                                if (todoValido) {
+                                    if (emailLimpio == adminEmail && password == adminPassword) {
+                                        onLoginSuccess()
+                                    } else {
+                                        if (emailLimpio != adminEmail) {
+                                            emailError = "Acceso denegado. Correo de administrador no válido."
+                                        }
+                                        if (password != adminPassword) {
+                                            passError = "Contraseña incorrecta."
+                                        }
+                                    }
+                                }
                             },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp),

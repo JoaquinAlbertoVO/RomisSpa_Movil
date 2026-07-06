@@ -1,3 +1,4 @@
+
 package com.romisspa.app.presentation.screens.servicios
 
 import androidx.compose.animation.AnimatedVisibility
@@ -29,7 +30,6 @@ fun ServiciosScreen(
     viewModel: ServiciosViewModel,
     onBack: () -> Unit
 ) {
-    //Esto obligará a la app a consultar a AWS cada vez que entres a la pantalla
     LaunchedEffect(Unit) {
         viewModel.getServicios()
     }
@@ -119,33 +119,97 @@ fun AddServicioDialog(onDismiss: () -> Unit, onConfirm: (Servicio) -> Unit) {
     var precio by remember { mutableStateOf("") }
     var duracion by remember { mutableStateOf("") }
 
+    // Estado para capturar y mostrar los mensajes de error
+    var nombreError by remember { mutableStateOf<String?>(null) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nuevo Servicio") },
+        title = { Text("Nuevo Servicio", fontWeight = FontWeight.Bold, color = CharcoalSoft) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") })
-                OutlinedTextField(value = descripcion, onValueChange = { descripcion = it }, label = { Text("Descripción") })
-                OutlinedTextField(value = precio, onValueChange = { precio = it }, label = { Text("Precio (S/)") })
-                OutlinedTextField(value = duracion, onValueChange = { duracion = it }, label = { Text("Duración") })
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+
+                // Campo Nombre (Con control de error en tiempo real para números)
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nuevoTexto ->
+                        nombre = nuevoTexto
+
+                        // Validar si contiene algún número o dígito
+                        val tieneNumeros = nuevoTexto.any { char -> char.isDigit() }
+
+                        nombreError = when {
+                            tieneNumeros -> "El nombre del servicio solo puede contener letras."
+                            nuevoTexto.isNotBlank() -> null
+                            else -> nombreError
+                        }
+                    },
+                    label = { Text("Nombre del servicio") },
+                    isError = nombreError != null,
+                    supportingText = {
+                        if (nombreError != null) {
+                            Text(text = nombreError!!, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Campo Descripción
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción (opcional)") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Campo Precio (Libre)
+                OutlinedTextField(
+                    value = precio,
+                    onValueChange = { precio = it },
+                    label = { Text("Precio (S/)") },
+                    placeholder = { Text("0.00") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Campo Duración
+                OutlinedTextField(
+                    value = duracion,
+                    onValueChange = { duracion = it },
+                    label = { Text("Duración (Ej: 45 min)") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (nombre.isNotBlank() && precio.isNotBlank()) {
+                    val tieneNumeros = nombre.any { char -> char.isDigit() }
+
+                    if (nombre.isBlank()) {
+                        nombreError = "El nombre no puede estar vacío."
+                    } else if (tieneNumeros) {
+                        nombreError = "El nombre del servicio solo puede contener letras."
+                    } else {
                         onConfirm(Servicio(nombre, descripcion, "S/ $precio", duracion))
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = RoseGold)
             ) {
-                Text("Guardar")
+                Text("Guardar", color = White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar", color = GreyWarm) }
         },
-        containerColor = White
+        containerColor = White,
+        shape = RoundedCornerShape(20.dp)
     )
 }
 

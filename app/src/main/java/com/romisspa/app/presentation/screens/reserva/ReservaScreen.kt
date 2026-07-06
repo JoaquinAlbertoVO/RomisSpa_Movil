@@ -37,12 +37,56 @@ fun ReservaScreen(
     var visible by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
 
+    // ── Estados para validaciones y control del DatePicker ──
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    var nombreError by remember { mutableStateOf<String?>(null) }
+    var telefonoError by remember { mutableStateOf<String?>(null) }
+    var camposIncompletosError by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) { visible = true }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             viewModel.clearSuccess()
             onBack()
+        }
+    }
+
+    // Diálogo de DatePicker para seleccionar fecha visualmente
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val seleccionado = datePickerState.selectedDateMillis
+                        if (seleccionado != null) {
+                            val fechaFormateada = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                .format(java.util.Date(seleccionado))
+                            viewModel.onFechaChange(fechaFormateada)
+                        }
+                        showDatePicker = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = RoseGold)
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar", color = GreyWarm)
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    selectedDayContainerColor = RoseGold,
+                    todayContentColor = RoseGold
+                )
+            )
         }
     }
 
@@ -78,15 +122,33 @@ fun ReservaScreen(
 
                 SpaTextField(
                     value = uiState.clienteNombre,
-                    onValueChange = viewModel::onNombreChange,
+                    onValueChange = { nuevoTexto ->
+                        val tieneNumeros = nuevoTexto.any { char -> char.isDigit() }
+                        nombreError = if (tieneNumeros) "El nombre no puede contener números." else null
+                        viewModel.onNombreChange(nuevoTexto)
+                    },
                     label = "Nombre completo",
+                    isError = nombreError != null,
+                    supportingText = nombreError,
                     leadingIcon = { Icon(Icons.Default.Person, null, tint = RoseGold) }
                 )
 
                 SpaTextField(
                     value = uiState.clienteTelefono,
-                    onValueChange = viewModel::onTelefonoChange,
+                    onValueChange = { nuevoTexto ->
+                        val soloNumeros = nuevoTexto.all { char -> char.isDigit() }
+                        if (soloNumeros && nuevoTexto.length <= 9) {
+                            viewModel.onTelefonoChange(nuevoTexto)
+                            telefonoError = if (nuevoTexto.length < 9) {
+                                "El número celular debe tener exactamente 9 dígitos."
+                            } else {
+                                null
+                            }
+                        }
+                    },
                     label = "Teléfono",
+                    isError = telefonoError != null,
+                    supportingText = telefonoError,
                     leadingIcon = { Icon(Icons.Default.Phone, null, tint = RoseGold) }
                 )
 
@@ -114,9 +176,12 @@ fun ReservaScreen(
 
                 SpaTextField(
                     value = uiState.fechaSelected,
-                    onValueChange = viewModel::onFechaChange,
-                    label = "Fecha (dd/mm/aaaa)",
-                    leadingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = RoseGold) }
+                    onValueChange = {},
+                    label = "Fecha de la cita",
+                    leadingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = RoseGold) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true } // El Box exterior captura el clic perfectamente
                 )
 
                 Text(
@@ -184,10 +249,47 @@ fun ReservaScreen(
                     maxLines = 4
                 )
 
+                if (camposIncompletosError != null) {
+                    Text(
+                        text = camposIncompletosError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
 
                 Button(
-                    onClick = { showConfirm = true },
+                    onClick = {
+                        var todoValido = true
+
+                        if (uiState.clienteNombre.isBlank()) {
+                            nombreError = "El nombre no puede estar vacío."
+                            todoValido = false
+                        }
+                        if (uiState.clienteTelefono.isBlank()) {
+                            telefonoError = "El teléfono no puede estar vacío."
+                            todoValido = false
+                        } else if (uiState.clienteTelefono.length != 9) {
+                            telefonoError = "El número celular debe tener exactamente 9 dígitos."
+                            todoValido = false
+                        }
+
+                        if (uiState.servicioSelected.isBlank() ||
+                            uiState.empleadaSelected.isBlank() ||
+                            uiState.fechaSelected.isBlank() ||
+                            uiState.horaSelected.isBlank()) {
+                            camposIncompletosError = "Por favor, completa todos los campos obligatorios (Servicio, Especialista, Fecha y Hora)."
+                            todoValido = false
+                        } else {
+                            camposIncompletosError = null
+                        }
+
+                        if (todoValido && nombreError == null && telefonoError == null) {
+                            showConfirm = true
+                        }
+                    },
                     enabled = !uiState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -238,23 +340,40 @@ private fun SpaTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    leadingIcon: @Composable (() -> Unit)? = null
+    isError: Boolean = false,
+    supportingText: String? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = leadingIcon,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = RoseGold,
-            unfocusedBorderColor = RoseGoldLight,
-            focusedLabelColor = RoseGold,
-            cursorColor = RoseGold
-        ),
-        singleLine = true
-    )
+    val esFecha = label.contains("Fecha")
+
+    Box(modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            leadingIcon = leadingIcon,
+            isError = isError,
+            enabled = !esFecha, // Desactivado si es fecha para transferir el clic al Box
+            supportingText = {
+                if (supportingText != null) {
+                    Text(text = supportingText, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = RoseGold,
+                unfocusedBorderColor = RoseGoldLight,
+                disabledBorderColor = RoseGoldLight,
+                focusedLabelColor = RoseGold,
+                disabledLabelColor = CharcoalSoft,
+                disabledTextColor = CharcoalSoft,
+                cursorColor = RoseGold
+            ),
+            singleLine = true
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

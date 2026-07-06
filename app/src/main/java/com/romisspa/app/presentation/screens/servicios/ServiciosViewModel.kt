@@ -47,9 +47,9 @@ class ServiciosViewModel(
     fun addServicio(servicio: Servicio) {
         viewModelScope.launch {
             try {
-                useCases.addServicio(servicio)
-                getServicios()
-                onShowAddDialog(false)
+                useCases.addServicio(servicio) // Llama al caso de uso
+                getServicios()                 // Recarga la lista en pantalla
+                onShowAddDialog(false)         // Cierra el diálogo
                 EventBus.send(UiEvent.Success("Servicio añadido correctamente"))
             } catch (e: Exception) {
                 EventBus.send(UiEvent.Error("Error al añadir servicio"))
