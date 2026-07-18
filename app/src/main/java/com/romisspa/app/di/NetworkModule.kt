@@ -10,6 +10,6 @@ class NetworkModule {
     }
 
     val remoteDataSource: RemoteDataSource by lazy {
-        RemoteDataSource(apiService)
+        RemoteDataSource()
     }
 }

@@ -4,23 +4,22 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.romisspa.app.ui.theme.*
@@ -28,20 +27,24 @@ import com.romisspa.app.ui.theme.*
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
 
-    var email       by remember { mutableStateOf("") }
-    var password    by remember { mutableStateOf("") }
-    var showPass    by remember { mutableStateOf(false) }
+    var pinInput by remember { mutableStateOf("") }
+    var pinError by remember { mutableStateOf<String?>(null) }
+    var visible by remember { mutableStateOf(false) }
 
-    // Cambiados a String? para manejar mensajes de error específicos
-    var emailError  by remember { mutableStateOf<String?>(null) }
-    var passError   by remember { mutableStateOf<String?>(null) }
-    var visible     by remember { mutableStateOf(false) }
-
-    // Credenciales del Administrador únicas
-    val adminEmail = "admin@romisspa.com"
-    val adminPassword = "admin123"
+    val adminPin = "0626"
 
     LaunchedEffect(Unit) { visible = true }
+
+    LaunchedEffect(pinInput) {
+        if (pinInput.length == 4) {
+            if (pinInput == adminPin) {
+                onLoginSuccess()
+            } else {
+                pinError = "PIN incorrecto"
+                pinInput = "" 
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -54,114 +57,137 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     ) {
         // Decoración
         Box(modifier = Modifier.size(300.dp).offset(x = (-60).dp, y = (-60).dp).clip(RoundedCornerShape(50)).background(RoseGold.copy(alpha = 0.08f)))
-        Box(modifier = Modifier.size(200.dp).align(Alignment.BottomEnd).offset(x = 60.dp, y = 60.dp).clip(RoundedCornerShape(50)).background(WarmGold.copy(alpha = 0.10f)))
+        Box(modifier = Modifier.size(200.dp).align(Alignment.BottomEnd).offset(x = 60.dp, y = 60.dp).clip(RoundedCornerShape(50)).background(WarmGold.copy(alpha = 0.25f)))
 
         AnimatedVisibility(
             visible = visible,
             enter   = fadeIn() + slideInVertically(initialOffsetY = { it / 4 })
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Top
             ) {
                 Text(text  = "✦", fontSize = 28.sp, color = WarmGold)
                 Text(text = "Romi's", style = MaterialTheme.typography.displayMedium, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Light, color = RoseGoldDark, letterSpacing = 4.sp)
                 Text(text = "SALON & SPA", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = GreyWarm, letterSpacing = 5.sp)
 
-                Spacer(Modifier.height(48.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
-                Card(
-                    modifier  = Modifier.fillMaxWidth(),
-                    shape     = RoundedCornerShape(24.dp),
-                    colors    = CardDefaults.cardColors(containerColor = White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                // PIN indicators
+                Text(
+                    text = pinError ?: "Ingresa tu PIN",
+                    color = if (pinError != null) MaterialTheme.colorScheme.error else CharcoalSoft,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text  = "Iniciar Sesión", style = MaterialTheme.typography.headlineMedium, color = CharcoalSoft)
-                        Spacer(Modifier.height(28.dp))
-
-                        // Campo Correo
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it; emailError = null },
-                            label = { Text("Correo electrónico") },
-                            leadingIcon = { Icon(Icons.Default.Person, null, tint = RoseGold) },
-                            isError = emailError != null,
-                            supportingText = {
-                                if (emailError != null) {
-                                    Text(text = emailError!!, color = MaterialTheme.colorScheme.error)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight)
+                    for (i in 0 until 4) {
+                        val isFilled = i < pinInput.length
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(if (isFilled) CharcoalSoft else CharcoalSoft.copy(alpha = 0.15f))
                         )
+                    }
+                }
 
-                        Spacer(Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(48.dp))
 
-                        // Campo Contraseña
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it; passError = null },
-                            label = { Text("Contraseña") },
-                            leadingIcon = { Icon(Icons.Default.Lock, null, tint = RoseGold) },
-                            trailingIcon = {
-                                IconButton(onClick = { showPass = !showPass }) {
-                                    Icon(if (showPass) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = GreyWarm)
-                                }
-                            },
-                            isError = passError != null,
-                            supportingText = {
-                                if (passError != null) {
-                                    Text(text = passError!!, color = MaterialTheme.colorScheme.error)
-                                }
-                            },
-                            visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight)
-                        )
+                // Numpad Grid
+                CustomNumpad(
+                    onNumberClick = { num ->
+                        if (pinInput.length < 4) {
+                            pinError = null
+                            pinInput += num
+                        }
+                    },
+                    onDeleteClick = {
+                        if (pinInput.isNotEmpty()) {
+                            pinInput = pinInput.dropLast(1)
+                        }
+                    }
+                )
 
-                        Spacer(Modifier.height(32.dp))
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
 
-                        // Botón Ingresar con validaciones estrictas
-                        Button(
-                            onClick = {
-                                val emailLimpio = email.trim()
-                                var todoValido = true
+@Composable
+fun CustomNumpad(onNumberClick: (String) -> Unit, onDeleteClick: () -> Unit) {
+    val padData = listOf(
+        listOf(Pair("1", ""), Pair("2", "ABC"), Pair("3", "DEF")),
+        listOf(Pair("4", "GHI"), Pair("5", "JKL"), Pair("6", "MNO")),
+        listOf(Pair("7", "PQRS"), Pair("8", "TUV"), Pair("9", "WXYZ")),
+        listOf(Pair("", ""), Pair("0", "+"), Pair("del", ""))
+    )
 
-                                // 1. Validar campos vacíos
-                                if (emailLimpio.isBlank()) {
-                                    emailError = "El correo no puede estar vacío."
-                                    todoValido = false
-                                }
-                                if (password.isBlank()) {
-                                    passError = "La contraseña no puede estar vacía."
-                                    todoValido = false
-                                }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        for (row in padData) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                for (item in row) {
+                    val number = item.first
+                    val letters = item.second
 
-                                // 2. Si no están vacíos, validar credenciales del administrador
-                                if (todoValido) {
-                                    if (emailLimpio == adminEmail && password == adminPassword) {
-                                        onLoginSuccess()
-                                    } else {
-                                        if (emailLimpio != adminEmail) {
-                                            emailError = "Acceso denegado. Correo de administrador no válido."
-                                        }
-                                        if (password != adminPassword) {
-                                            passError = "Contraseña incorrecta."
-                                        }
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = RoseGold)
+                    if (number.isEmpty()) {
+                        Spacer(modifier = Modifier.size(72.dp))
+                    } else if (number == "del") {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .clickable { onDeleteClick() },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text("INGRESAR", letterSpacing = 2.sp)
+                            Icon(
+                                imageVector = Icons.Default.Backspace,
+                                contentDescription = "Eliminar",
+                                tint = CharcoalSoft,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(White.copy(alpha = 0.6f))
+                                .clickable { onNumberClick(number) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = number,
+                                    fontSize = 32.sp,
+                                    color = CharcoalSoft,
+                                    fontWeight = FontWeight.Normal
+                                )
+                                if (letters.isNotEmpty()) {
+                                    Text(
+                                        text = letters,
+                                        fontSize = 10.sp,
+                                        color = CharcoalSoft.copy(alpha = 0.6f),
+                                        letterSpacing = 1.sp
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.height(14.dp)) // Maintain alignment for '1'
+                                }
+                            }
                         }
                     }
                 }

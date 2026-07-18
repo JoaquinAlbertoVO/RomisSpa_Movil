@@ -1,7 +1,9 @@
 import * as servicioController from "./controllers/servicio.controller.mjs";
 import * as citaController from "./controllers/cita.controller.mjs";
-//  ¡FALTABA ESTA IMPORTACIÓN CRUCIAL!
 import * as clienteController from "./controllers/cliente.controller.mjs";
+import * as ventaController from "./controllers/venta.controller.mjs";
+import * as empleadoController from "./controllers/empleado.controller.mjs";
+import * as productoController from "./controllers/producto.controller.mjs";
 
 export const handler = async (event) => {
   try {
@@ -20,7 +22,7 @@ export const handler = async (event) => {
     }
 
     // ==========================================
-    // ENRUTADOR INTELIGENTE: CONTROL DE CLIENTES
+    // ENRUTADOR: CLIENTES
     // ==========================================
     if (path.includes("/clientes")) {
       if (method === "GET") {
@@ -32,9 +34,9 @@ export const handler = async (event) => {
     }
 
     // ==========================================
-    // ENRUTADOR INTELIGENTE: CONTROL DE CITAS
+    // ENRUTADOR: CITAS
     // ==========================================
-    if (body.cliente || path.includes("/citas")) {
+    if (path.includes("/citas")) {
       if (method === "GET") {
         return await citaController.listarCitas();
       }
@@ -42,23 +44,85 @@ export const handler = async (event) => {
         return await citaController.crearCita(body);
       }
       if (method === "DELETE") {
-        const idCita = id || path.split("/")[2];
+        const idCita = id || path.split("/").pop();
         return await citaController.eliminarCita(idCita);
+      }
+      if (method === "PATCH") {
+        const idCita = id || path.split("/").pop();
+        return await citaController.actualizarEstadoCita(idCita, body);
       }
     }
 
     // ==========================================
-    // ENRUTADOR INTELIGENTE: CONTROL DE SERVICIOS
+    // ENRUTADOR: VENTAS
     // ==========================================
-    // Ajustado para priorizar la ruta exacta y evitar que intercepte peticiones de clientes
-    if (path.includes("/servicios") || (!path.includes("/clientes") && (body.nombre || method === "GET"))) {
+    if (path.includes("/ventas")) {
       if (method === "GET") {
-        if (!nombre) {
-          return await servicioController.cargarServicios(event.queryStringParameters);
-        } else {
-          const nombreServicio = nombre || path.split("/")[2];
+        return await ventaController.listarVentas();
+      }
+      if (method === "POST") {
+        return await ventaController.registrarVenta(body);
+      }
+    }
+
+    // ==========================================
+    // ENRUTADOR: EMPLEADOS
+    // ==========================================
+    if (path.includes("/empleados")) {
+      if (method === "GET") {
+        const empId = id || path.split("/")[2];
+        if (empId && empId !== "empleados") {
+          return await empleadoController.buscarEmpleado(empId);
+        }
+        return await empleadoController.listarEmpleados(event.queryStringParameters);
+      }
+      if (method === "POST") {
+        return await empleadoController.insertarEmpleado(event);
+      }
+      if (method === "PUT") {
+        const empId = id || path.split("/")[2] || body.id;
+        return await empleadoController.actualizarEmpleado(empId, event);
+      }
+      if (method === "DELETE") {
+        const empId = id || path.split("/")[2];
+        return await empleadoController.eliminarEmpleado(empId);
+      }
+    }
+
+    // ==========================================
+    // ENRUTADOR: PRODUCTOS
+    // ==========================================
+    if (path.includes("/productos")) {
+      if (method === "GET") {
+        const prodId = id || path.split("/")[2];
+        if (prodId && prodId !== "productos") {
+          return await productoController.buscarProducto(prodId);
+        }
+        return await productoController.listarProductos(event.queryStringParameters);
+      }
+      if (method === "POST") {
+        return await productoController.insertarProducto(event);
+      }
+      if (method === "PUT") {
+        const prodId = id || path.split("/")[2] || body.id;
+        return await productoController.actualizarProducto(prodId, event);
+      }
+      if (method === "DELETE") {
+        const prodId = id || path.split("/")[2];
+        return await productoController.eliminarProducto(prodId);
+      }
+    }
+
+    // ==========================================
+    // ENRUTADOR: SERVICIOS
+    // ==========================================
+    if (path.includes("/servicios")) {
+      if (method === "GET") {
+        const nombreServicio = nombre || path.split("/")[2];
+        if (nombreServicio && nombreServicio !== "servicios") {
           return await servicioController.buscarServicio(nombreServicio);
         }
+        return await servicioController.cargarServicios(event.queryStringParameters);
       }
       if (method === "POST") {
         return await servicioController.insertarServicio(event);
@@ -79,6 +143,16 @@ export const handler = async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: `Ruta o datos no reconocidos: ${method} ${path}` })
     };
+
+  } catch (error) {
+    console.error("Unexpected Error:", error);
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Internal Server Error", details: error.message })
+    };
+  }
+};
 
   } catch (error) {
     console.error("Unexpected Error:", error);

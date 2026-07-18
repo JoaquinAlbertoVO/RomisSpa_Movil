@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "606910770767",
+    "project_id": "romisspa",
+    "storage_bucket": "romisspa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:606910770767:android:f4a78610520efc3d69843a",
+        "android_client_info": {
+          "package_name": "com.romisspa.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbkBORUIsB1qN_VV6tWi4cMgaGUj0LTw4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

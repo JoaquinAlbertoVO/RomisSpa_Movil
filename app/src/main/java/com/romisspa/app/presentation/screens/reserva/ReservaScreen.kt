@@ -20,11 +20,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.romisspa.app.domain.model.Cliente
+import com.romisspa.app.domain.model.Empleado
+import com.romisspa.app.domain.model.Servicio
 import com.romisspa.app.ui.theme.*
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,11 +39,29 @@ fun ReservaScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val serviciosAvailable by viewModel.serviciosAvailable.collectAsState()
+    val empleadosAvailable by viewModel.empleadosAvailable.collectAsState()
     var visible by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
 
     // ── Estados para validaciones y control del DatePicker ──
     var showDatePicker by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    val timePickerDialog = remember {
+        android.app.TimePickerDialog(
+            context,
+            { _, selectedHour, selectedMinute ->
+                val amPm = if (selectedHour >= 12) "PM" else "AM"
+                val hour12 = if (selectedHour % 12 == 0) 12 else selectedHour % 12
+                val formattedTime = String.format("%02d:%02d %s", hour12, selectedMinute, amPm)
+                viewModel.onHoraChange(formattedTime)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            false
+        )
+    }
     val datePickerState = rememberDatePickerState()
 
     var nombreError by remember { mutableStateOf<String?>(null) }
@@ -103,7 +126,7 @@ fun ReservaScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(colors = listOf(Cream, CreamDark)))
+            .background(Brush.verticalGradient(colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceVariant)))
     ) {
         AnimatedVisibility(
             visible = visible,
@@ -118,7 +141,7 @@ fun ReservaScreen(
             ) {
 
                 // ── Sección: Datos del cliente ────────────────────────
-                SectionHeader(title = "Datos del Cliente", icon = "👤")
+                SectionHeader(title = "Datos del Cliente", icon = Icons.Default.Person)
 
                 SpaTextField(
                     value = uiState.clienteNombre,
@@ -153,7 +176,7 @@ fun ReservaScreen(
                 )
 
                 // ── Sección: Servicio ─────────────────────────────────
-                SectionHeader(title = "Servicio", icon = "✨")
+                SectionHeader(title = "Servicio", icon = Icons.Default.Spa)
 
                 DropdownSpa(
                     label = "Selecciona un servicio",
@@ -165,14 +188,14 @@ fun ReservaScreen(
 
                 DropdownSpa(
                     label = "Especialista",
-                    options = listOf("Rosa Mendoza", "Carmen Flores", "Lucia Torres", "María Quispe"),
+                    options = empleadosAvailable.map { it.nombre },
                     selected = uiState.empleadaSelected,
                     onSelect = viewModel::onEmpleadaChange,
                     icon = { Icon(Icons.Default.Badge, null, tint = RoseGold) }
                 )
 
                 // ── Sección: Fecha y hora ─────────────────────────────
-                SectionHeader(title = "Fecha y Hora", icon = "📅")
+                SectionHeader(title = "Fecha y Hora", icon = Icons.Default.CalendarMonth)
 
                 SpaTextField(
                     value = uiState.fechaSelected,
@@ -184,53 +207,18 @@ fun ReservaScreen(
                         .clickable { showDatePicker = true } // El Box exterior captura el clic perfectamente
                 )
 
-                Text(
-                    text = "Horario disponible",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = GreyWarm,
-                    modifier = Modifier.padding(top = 4.dp)
+                SpaTextField(
+                    value = uiState.horaSelected,
+                    onValueChange = {},
+                    label = "Hora de la cita",
+                    leadingIcon = { Icon(Icons.Default.Schedule, null, tint = RoseGold) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .clickable { timePickerDialog.show() }
                 )
 
-                val horas = listOf("09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM")
-                val rows = horas.chunked(4)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    rows.forEach { row ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            row.forEach { hora ->
-                                val isSelected = uiState.horaSelected == hora
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) RoseGold else White)
-                                        .border(
-                                            width = 1.dp,
-                                            color = if (isSelected) RoseGold else RoseGoldLight,
-                                            shape = RoundedCornerShape(10.dp)
-                                        )
-                                        .clickable { viewModel.onHoraChange(hora) }
-                                        .padding(vertical = 10.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = hora,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (isSelected) White else CharcoalSoft,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                }
-                            }
-                            repeat(4 - row.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-
-                SectionHeader(title = "Notas adicionales", icon = "📝")
+                SectionHeader(title = "Notas adicionales", icon = Icons.Default.EditNote)
 
                 OutlinedTextField(
                     value = uiState.notasExtra,
@@ -297,12 +285,12 @@ fun ReservaScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = RoseGold,
-                        contentColor = White
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
                         Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(10.dp))
@@ -321,14 +309,14 @@ fun ReservaScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String, icon: String) {
+private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = icon, fontSize = 16.sp)
+        Icon(imageVector = icon, contentDescription = null, tint = RoseGold, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            color = CharcoalSoft
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.width(12.dp))
         HorizontalDivider(color = RoseGoldLight, modifier = Modifier.weight(1f))
@@ -345,7 +333,7 @@ private fun SpaTextField(
     leadingIcon: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val esFecha = label.contains("Fecha")
+    val esSoloLectura = label.contains("Fecha") || label.contains("Hora")
 
     Box(modifier = modifier) {
         OutlinedTextField(
@@ -354,7 +342,7 @@ private fun SpaTextField(
             label = { Text(label) },
             leadingIcon = leadingIcon,
             isError = isError,
-            enabled = !esFecha, // Desactivado si es fecha para transferir el clic al Box
+            enabled = !esSoloLectura, // Desactivado si es fecha/hora para transferir el clic al Box
             supportingText = {
                 if (supportingText != null) {
                     Text(text = supportingText, color = MaterialTheme.colorScheme.error)
@@ -367,8 +355,8 @@ private fun SpaTextField(
                 unfocusedBorderColor = RoseGoldLight,
                 disabledBorderColor = RoseGoldLight,
                 focusedLabelColor = RoseGold,
-                disabledLabelColor = CharcoalSoft,
-                disabledTextColor = CharcoalSoft,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurface,
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 cursorColor = RoseGold
             ),
             singleLine = true
@@ -416,7 +404,7 @@ private fun DropdownSpa(
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option, color = CharcoalSoft) },
+                    text = { Text(option, color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         onSelect(option)
                         expanded = false
@@ -434,7 +422,7 @@ private fun ConfirmacionDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = White,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(24.dp),
         icon = {
             Icon(
@@ -448,7 +436,7 @@ private fun ConfirmacionDialog(
             Text(
                 text = "Confirmar Reserva",
                 fontFamily = FontFamily.Serif,
-                color = CharcoalSoft
+                color = MaterialTheme.colorScheme.onSurface
             )
         },
         text = {
@@ -464,7 +452,7 @@ private fun ConfirmacionDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = RoseGold),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Confirmar", color = White)
+                Text("Confirmar", color = MaterialTheme.colorScheme.onPrimary)
             }
         },
         dismissButton = {

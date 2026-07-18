@@ -15,3 +15,7 @@ export const listado = async () => {
 export const eliminar = async (id) => {
   await repo.eliminarCita(id);
 };
+
+export const actualizarEstado = async (id, estado) => {
+  return await repo.actualizarEstadoCita(id, estado);
+};

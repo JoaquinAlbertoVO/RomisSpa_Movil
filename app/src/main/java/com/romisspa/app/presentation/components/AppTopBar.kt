@@ -33,7 +33,7 @@ fun AppTopBar(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                color = CharcoalSoft
+                color = MaterialTheme.colorScheme.onBackground
             )
         },
         navigationIcon = {
@@ -42,14 +42,14 @@ fun AppTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Volver",
-                        tint = RoseGold
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Cream,
-            titleContentColor = CharcoalSoft
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground
         )
     )
 }

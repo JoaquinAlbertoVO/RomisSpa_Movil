@@ -28,3 +28,12 @@ export const eliminarCita = async (id) => {
   await service.eliminar(id);
   return noContent(); // Usa tu función 'noContent' (204)
 };
+
+export const actualizarEstadoCita = async (id, body) => {
+  const { estado } = body;
+  if (!estado) {
+    return badRequest({ message: "El estado es obligatorio" });
+  }
+  const actualizado = await service.actualizarEstado(id, estado);
+  return ok(actualizado);
+};

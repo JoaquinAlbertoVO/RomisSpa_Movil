@@ -21,6 +21,7 @@ class ServiciosViewModel(
 
     init {
         getServicios()
+        loadProductos()
     }
 
     fun getServicios() {
@@ -32,6 +33,17 @@ class ServiciosViewModel(
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
                 EventBus.send(UiEvent.Error("Error al cargar servicios: ${e.message}"))
+            }
+        }
+    }
+
+    fun loadProductos() {
+        viewModelScope.launch {
+            try {
+                val productos = useCases.getProductos()
+                _uiState.update { it.copy(productos = productos) }
+            } catch (e: Exception) {
+                // No crítico
             }
         }
     }

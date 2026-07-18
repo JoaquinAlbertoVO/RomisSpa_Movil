@@ -40,6 +40,7 @@ fun ServiciosScreen(
 
     if (uiState.showAddDialog) {
         AddServicioDialog(
+            productos = uiState.productos,
             onDismiss = { viewModel.onShowAddDialog(false) },
             onConfirm = { nuevo ->
                 viewModel.addServicio(nuevo)
@@ -51,7 +52,7 @@ fun ServiciosScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(colors = listOf(Cream, CreamDark)))
+                .background(Brush.verticalGradient(colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceVariant)))
         ) {
             // Buscador
             OutlinedTextField(
@@ -105,7 +106,7 @@ fun ServiciosScreen(
                 .align(Alignment.BottomEnd)
                 .padding(24.dp),
             containerColor = RoseGold,
-            contentColor = White
+            contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
             Icon(Icons.Default.Add, contentDescription = "Añadir Servicio")
         }
@@ -113,30 +114,32 @@ fun ServiciosScreen(
 }
 
 @Composable
-fun AddServicioDialog(onDismiss: () -> Unit, onConfirm: (Servicio) -> Unit) {
+fun AddServicioDialog(
+    productos: List<com.romisspa.app.domain.model.Producto>,
+    onDismiss: () -> Unit,
+    onConfirm: (Servicio) -> Unit
+) {
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var duracion by remember { mutableStateOf("") }
-
-    // Estado para capturar y mostrar los mensajes de error
     var nombreError by remember { mutableStateOf<String?>(null) }
+
+    // Insumos de la receta: lista de pares (Producto, cantidad como texto)
+    var insumosReceta by remember { mutableStateOf<List<Pair<com.romisspa.app.domain.model.Producto, String>>>(emptyList()) }
+    var expandedProducto by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nuevo Servicio", fontWeight = FontWeight.Bold, color = CharcoalSoft) },
+        title = { Text("Nuevo Servicio", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
 
-                // Campo Nombre (Con control de error en tiempo real para números)
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nuevoTexto ->
                         nombre = nuevoTexto
-
-                        // Validar si contiene algún número o dígito
                         val tieneNumeros = nuevoTexto.any { char -> char.isDigit() }
-
                         nombreError = when {
                             tieneNumeros -> "El nombre del servicio solo puede contener letras."
                             nuevoTexto.isNotBlank() -> null
@@ -146,16 +149,13 @@ fun AddServicioDialog(onDismiss: () -> Unit, onConfirm: (Servicio) -> Unit) {
                     label = { Text("Nombre del servicio") },
                     isError = nombreError != null,
                     supportingText = {
-                        if (nombreError != null) {
-                            Text(text = nombreError!!, color = MaterialTheme.colorScheme.error)
-                        }
+                        if (nombreError != null) Text(text = nombreError!!, color = MaterialTheme.colorScheme.error)
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Campo Descripción
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
@@ -165,7 +165,6 @@ fun AddServicioDialog(onDismiss: () -> Unit, onConfirm: (Servicio) -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Campo Precio (Libre)
                 OutlinedTextField(
                     value = precio,
                     onValueChange = { precio = it },
@@ -176,7 +175,6 @@ fun AddServicioDialog(onDismiss: () -> Unit, onConfirm: (Servicio) -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Campo Duración
                 OutlinedTextField(
                     value = duracion,
                     onValueChange = { duracion = it },
@@ -185,30 +183,132 @@ fun AddServicioDialog(onDismiss: () -> Unit, onConfirm: (Servicio) -> Unit) {
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RoseGold, unfocusedBorderColor = RoseGoldLight),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Sección de Insumos / Receta
+                if (productos.isNotEmpty()) {
+                    Divider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    Text(
+                        "🧴 Insumos utilizados (opcional)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = GreyWarm
+                    )
+                    Text(
+                        "Indica qué productos se consumen al realizar este servicio",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GreyWarm.copy(alpha = 0.7f)
+                    )
+
+                    // Lista de insumos ya añadidos
+                    insumosReceta.forEachIndexed { index, (producto, cantidadTexto) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = producto.nombre,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            OutlinedTextField(
+                                value = cantidadTexto,
+                                onValueChange = { nuevo ->
+                                    if (nuevo.isEmpty() || nuevo.toDoubleOrNull() != null || nuevo.endsWith(".")) {
+                                        val nuevaLista = insumosReceta.toMutableList()
+                                        nuevaLista[index] = producto to nuevo
+                                        insumosReceta = nuevaLista
+                                    }
+                                },
+                                modifier = Modifier.width(80.dp),
+                                singleLine = true,
+                                label = { Text("Cant.", style = MaterialTheme.typography.labelSmall) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoseGold,
+                                    unfocusedBorderColor = RoseGoldLight
+                                ),
+                                textStyle = MaterialTheme.typography.bodySmall
+                            )
+                            IconButton(
+                                onClick = {
+                                    insumosReceta = insumosReceta.filterIndexed { i, _ -> i != index }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Text("✕", color = Color.Red, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+
+                    // Botón para añadir un producto a la receta
+                    Box {
+                        OutlinedButton(
+                            onClick = { expandedProducto = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = RoseGold)
+                        ) {
+                            Text("+ Añadir insumo a la receta", style = MaterialTheme.typography.labelMedium)
+                        }
+                        DropdownMenu(
+                            expanded = expandedProducto,
+                            onDismissRequest = { expandedProducto = false }
+                        ) {
+                            val productosDisponibles = productos.filter { p ->
+                                insumosReceta.none { (prod, _) -> prod.id == p.id }
+                            }
+                            if (productosDisponibles.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("No hay más productos", color = GreyWarm) },
+                                    onClick = { expandedProducto = false }
+                                )
+                            } else {
+                                productosDisponibles.forEach { prod ->
+                                    DropdownMenuItem(
+                                        text = { Text(prod.nombre) },
+                                        onClick = {
+                                            insumosReceta = insumosReceta + (prod to "1.0")
+                                            expandedProducto = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     val tieneNumeros = nombre.any { char -> char.isDigit() }
-
                     if (nombre.isBlank()) {
                         nombreError = "El nombre no puede estar vacío."
                     } else if (tieneNumeros) {
                         nombreError = "El nombre del servicio solo puede contener letras."
                     } else {
-                        onConfirm(Servicio(nombre, descripcion, "S/ $precio", duracion))
+                        val insumosDominio = insumosReceta.mapNotNull { (prod, cantTexto) ->
+                            val cantidad = cantTexto.toDoubleOrNull() ?: return@mapNotNull null
+                            if (cantidad <= 0) return@mapNotNull null
+                            com.romisspa.app.domain.model.Insumo(
+                                productoId = prod.id,
+                                nombre = prod.nombre,
+                                cantidad = cantidad
+                            )
+                        }
+                        onConfirm(Servicio(nombre = nombre, descripcion = descripcion, precio = "S/ $precio", duracion = duracion, insumos = insumosDominio))
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = RoseGold)
             ) {
-                Text("Guardar", color = White)
+                Text("Guardar", color = MaterialTheme.colorScheme.onPrimary)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar", color = GreyWarm) }
         },
-        containerColor = White,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(20.dp)
     )
 }
@@ -221,7 +321,7 @@ fun ServicioItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
@@ -234,7 +334,7 @@ fun ServicioItem(
                 Text(
                     text = servicio.nombre,
                     style = MaterialTheme.typography.titleMedium,
-                    color = CharcoalSoft,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
                 Text(

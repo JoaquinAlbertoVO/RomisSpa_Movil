@@ -32,7 +32,7 @@ fun AppBottomBar(
     )
 
     NavigationBar(
-        containerColor = Cream
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
     ) {
         items.forEach { item ->
             NavigationBarItem(
@@ -49,11 +49,11 @@ fun AppBottomBar(
                 icon = { Icon(item.icon, null) },
                 label = { Text(item.title) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = RoseGold,
-                    selectedTextColor = RoseGold,
-                    unselectedIconColor = GreyWarm,
-                    unselectedTextColor = GreyWarm,
-                    indicatorColor = Cream
+                    selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.background
                 )
             )
         }

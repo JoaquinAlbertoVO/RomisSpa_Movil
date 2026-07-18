@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.romisspa.app" />
+                  <option name="mobileSdkAppId" value="1:606910770767:android:f4a78610520efc3d69843a" />
+                  <option name="projectId" value="romisspa" />
+                  <option name="projectNumber" value="606910770767" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

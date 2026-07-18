@@ -1,23 +1,34 @@
 package com.romisspa.app.data.mapper
 
 import com.romisspa.app.data.remote.dto.ServicioDto
+import com.romisspa.app.domain.model.Insumo
 import com.romisspa.app.domain.model.Servicio
 
 fun ServicioDto.toDomain() = Servicio(
+    id = id ?: "",
     nombre = nombre,
     descripcion = descripcion,
-    // Convertimos el número a texto y le agregamos "S/ " adelante
     precio = "S/ " + precio,
-    // Como la API no nos da duración todavía, le ponemos uno por defecto
-    duracion = "60 min"
+    duracion = "60 min",
+    insumos = insumos.mapNotNull { map ->
+        val productoId = map["productoId"] as? String ?: return@mapNotNull null
+        val nombre = map["nombre"] as? String ?: return@mapNotNull null
+        val cantidad = (map["cantidad"] as? Number)?.toDouble() ?: 1.0
+        Insumo(productoId = productoId, nombre = nombre, cantidad = cantidad)
+    }
 )
 
 fun Servicio.toDto() = ServicioDto(
+    id = id.ifEmpty { null },
     nombre = nombre,
     descripcion = descripcion,
-    // Quitamos el "S/ " del texto y lo convertimos a número decimal (Double)
-    // Si el texto no es un número, usamos 0.0 para que no falle
     precio = precio.replace("S/ ", "").toDoubleOrNull() ?: 0.0,
-    // Por ahora no enviamos imagen, así que mandamos null
-    imagenRes = null
+    imagenRes = null,
+    insumos = insumos.map { insumo ->
+        mapOf(
+            "productoId" to insumo.productoId,
+            "nombre" to insumo.nombre,
+            "cantidad" to insumo.cantidad
+        )
+    }
 )

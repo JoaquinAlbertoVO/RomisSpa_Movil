@@ -29,6 +29,12 @@ interface SpaApiService {
     @DELETE("citas/{id}")
     suspend fun deleteCita(@Path("id") id: String): Response<ApiResponse<Unit>>
 
+    @PATCH("citas/{id}")
+    suspend fun updateCitaStatus(
+        @Path("id") id: String,
+        @Body request: UpdateCitaStatusRequest
+    ): Response<ApiResponse<Unit>>
+
     // CLIENTES
     @GET("clientes")
     suspend fun getClientes(): Response<ApiResponse<List<ClienteDto>>>
@@ -36,7 +42,40 @@ interface SpaApiService {
     @POST("clientes")
     suspend fun addOrUpdateCliente(@Body cliente: ClienteDto): Response<ApiResponse<Unit>>
 
+    // VENTAS
+    @GET("ventas")
+    suspend fun getVentas(): Response<ApiResponse<List<VentaDto>>>
+
+    @POST("ventas")
+    suspend fun addVenta(@Body request: CreateVentaRequest): Response<ApiResponse<VentaDto>>
+
+    // PRODUCTOS
+    @GET("productos")
+    suspend fun getProductos(): Response<ApiResponse<List<ProductoDto>>>
+
+    @POST("productos")
+    suspend fun addProducto(@Body request: CreateProductoRequest): Response<ApiResponse<Unit>>
+
+    @PUT("productos")
+    suspend fun updateProducto(@Body request: UpdateProductoRequest): Response<ApiResponse<Unit>>
+
+    @DELETE("productos/{id}")
+    suspend fun deleteProducto(@Path("id") id: String): Response<ApiResponse<Unit>>
+
+    // EMPLEADOS
+    @GET("empleados")
+    suspend fun getEmpleados(): Response<ApiResponse<List<EmpleadoDto>>>
+
+    @POST("empleados")
+    suspend fun addEmpleado(@Body request: CreateEmpleadoRequest): Response<ApiResponse<Unit>>
+
+    @PUT("empleados")
+    suspend fun updateEmpleado(@Body request: EmpleadoDto): Response<ApiResponse<Unit>>
+
+    @DELETE("empleados/{id}")
+    suspend fun deleteEmpleado(@Path("id") id: String): Response<ApiResponse<Unit>>
+
     companion object {
-        const val BASE_URL = "https://TU_API_GATEWAY_URL.amazonaws.com/prod/"
+        const val BASE_URL = "https://zv9s3wu4oa.execute-api.us-east-1.amazonaws.com/"
     }
 }

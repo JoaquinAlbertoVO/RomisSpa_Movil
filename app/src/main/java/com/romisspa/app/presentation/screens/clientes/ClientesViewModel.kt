@@ -23,6 +23,7 @@ class ClientesViewModel(
 
     init {
         getClientes()
+        loadVentas()
     }
 
     fun getClientes() {
@@ -34,6 +35,17 @@ class ClientesViewModel(
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
                 EventBus.send(UiEvent.Error("Error al cargar clientes: ${e.message}"))
+            }
+        }
+    }
+
+    private fun loadVentas() {
+        viewModelScope.launch {
+            try {
+                val ventas = useCases.getVentas()
+                _uiState.update { it.copy(ventas = ventas) }
+            } catch (e: Exception) {
+                // Ignore error, fallback empty list is used
             }
         }
     }

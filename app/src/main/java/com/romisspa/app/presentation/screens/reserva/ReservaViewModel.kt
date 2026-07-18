@@ -3,6 +3,7 @@ package com.romisspa.app.presentation.screens.reserva
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.romisspa.app.domain.model.Cita
+import com.romisspa.app.domain.model.Empleado
 import com.romisspa.app.domain.model.Servicio
 import com.romisspa.app.domain.usecase.SpaUseCases
 import com.romisspa.app.presentation.event.EventBus
@@ -23,8 +24,12 @@ class ReservaViewModel(
     private val _serviciosAvailable = MutableStateFlow<List<Servicio>>(emptyList())
     val serviciosAvailable = _serviciosAvailable.asStateFlow()
 
+    private val _empleadosAvailable = MutableStateFlow<List<Empleado>>(emptyList())
+    val empleadosAvailable = _empleadosAvailable.asStateFlow()
+
     init {
         loadServicios()
+        loadEmpleados()
     }
 
     private fun loadServicios() {
@@ -34,6 +39,17 @@ class ReservaViewModel(
                 _serviciosAvailable.value = servicios
             } catch (e: Exception) {
                 EventBus.send(UiEvent.Error("Error al cargar servicios: ${e.message}"))
+            }
+        }
+    }
+
+    private fun loadEmpleados() {
+        viewModelScope.launch {
+            try {
+                val empleados = useCases.getEmpleados()
+                _empleadosAvailable.value = empleados
+            } catch (e: Exception) {
+                EventBus.send(UiEvent.Error("Error al cargar empleados: ${e.message}"))
             }
         }
     }
@@ -79,6 +95,7 @@ class ReservaViewModel(
                 useCases.addCita(
                     Cita(
                         cliente = state.clienteNombre,
+                        telefono = state.clienteTelefono,
                         servicio = state.servicioSelected,
                         fecha = state.fechaSelected,
                         hora = state.horaSelected,

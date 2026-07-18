@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.romisspa.app.domain.model.Cliente
+import com.romisspa.app.domain.model.Venta
 import com.romisspa.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +41,7 @@ fun ClientesScreen(
     val uiState by viewModel.uiState.collectAsState()
     var visible by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var clienteToShowHistory by remember { mutableStateOf<Cliente?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { visible = true }
@@ -59,7 +61,7 @@ fun ClientesScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Brush.verticalGradient(colors = listOf(Cream, CreamDark)))
+                    .background(Brush.verticalGradient(colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceVariant)))
             ) {
                 // Buscador
                 OutlinedTextField(
@@ -96,7 +98,10 @@ fun ClientesScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(filteredClientes) { cliente ->
-                                ClienteItem(cliente)
+                                ClienteItem(
+                                    cliente = cliente,
+                                    onViewHistory = { clienteToShowHistory = cliente }
+                                )
                             }
                         }
                     }
@@ -113,7 +118,7 @@ fun ClientesScreen(
                     .align(Alignment.BottomEnd)
                     .padding(24.dp),
                 containerColor = RoseGold,
-                contentColor = White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Añadir Cliente")
             }
@@ -129,6 +134,16 @@ fun ClientesScreen(
                             showAddDialog = false
                         })
                     }
+                )
+            }
+
+            // Historial del Cliente
+            clienteToShowHistory?.let { cliente ->
+                val historial = uiState.ventas.filter { it.cliente.equals(cliente.nombre, ignoreCase = true) }
+                ClienteHistoryDialog(
+                    cliente = cliente,
+                    historial = historial,
+                    onDismiss = { clienteToShowHistory = null }
                 )
             }
         }
@@ -151,7 +166,7 @@ fun AddClienteDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Nuevo Cliente", fontWeight = FontWeight.Bold, color = CharcoalSoft) },
+        title = { Text(text = "Nuevo Cliente", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
@@ -238,7 +253,7 @@ fun AddClienteDialog(
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = RoseGold)
             ) {
-                Text("Guardar", color = White)
+                Text("Guardar", color = MaterialTheme.colorScheme.onPrimary)
             }
         },
         dismissButton = {
@@ -247,15 +262,18 @@ fun AddClienteDialog(
             }
         },
         shape = RoundedCornerShape(16.dp),
-        containerColor = White
+        containerColor = MaterialTheme.colorScheme.surface
     )
 }
 @Composable
-fun ClienteItem(cliente: Cliente) {
+fun ClienteItem(
+    cliente: Cliente,
+    onViewHistory: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
@@ -285,7 +303,7 @@ fun ClienteItem(cliente: Cliente) {
                 Text(
                     text = cliente.nombre,
                     style = MaterialTheme.typography.titleMedium,
-                    color = CharcoalSoft,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -319,6 +337,13 @@ fun ClienteItem(cliente: Cliente) {
                         onDismissRequest = { showOptions = false }
                     ) {
                         DropdownMenuItem(
+                            text = { Text("Ver Historial", color = RoseGold) },
+                            onClick = { 
+                                showOptions = false
+                                onViewHistory()
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Eliminar Cliente", color = Color.Red) },
                             onClick = { showOptions = false }
                         )
@@ -327,4 +352,57 @@ fun ClienteItem(cliente: Cliente) {
             }
         }
     }
+}
+
+@Composable
+fun ClienteHistoryDialog(
+    cliente: Cliente,
+    historial: List<Venta>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { 
+            Text(
+                "Historial - ${cliente.nombre}", 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            ) 
+        },
+        text = {
+            if (historial.isEmpty()) {
+                Text("No hay servicios registrados para este cliente.", color = GreyWarm)
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.heightIn(max = 300.dp)
+                ) {
+                    items(historial) { venta ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                            ) {
+                                Text(venta.servicio, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Fecha: ${venta.fecha}", style = MaterialTheme.typography.bodySmall, color = GreyWarm)
+                                Text("Monto: S/ ${venta.monto}", style = MaterialTheme.typography.bodySmall, color = RoseGold)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar", color = RoseGold)
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp)
+    )
 }

@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.rememberNavController
 import com.romisspa.app.core.navigation.AppNavigation
 import com.romisspa.app.presentation.components.AppScaffold
@@ -19,14 +21,20 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            RomisSpaTheme {
+            var isDarkTheme by androidx.compose.runtime.remember { 
+                androidx.compose.runtime.mutableStateOf(false) 
+            }
+            
+            RomisSpaTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
                 
                 AppScaffold(navController = navController) { padding ->
                     AppNavigation(
                         navController = navController,
                         container = container,
-                        padding = padding
+                        padding = padding,
+                        isDarkTheme = isDarkTheme,
+                        onThemeToggle = { isDarkTheme = it }
                     )
                 }
             }

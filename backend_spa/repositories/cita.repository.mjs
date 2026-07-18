@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, ScanCommand, DeleteCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -17,5 +17,18 @@ export const getCitas = async () => {
 
 export const eliminarCita = async (id) => {
   const command = new DeleteCommand({ TableName: TABLE_NAME, Key: { id } });
+  return await docClient.send(command);
+};
+
+export const actualizarEstadoCita = async (id, estado) => {
+  const command = new UpdateCommand({
+    TableName: TABLE_NAME,
+    Key: { id },
+    UpdateExpression: "set estado = :e",
+    ExpressionAttributeValues: {
+      ":e": estado,
+    },
+    ReturnValues: "ALL_NEW",
+  });
   return await docClient.send(command);
 };
