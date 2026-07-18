@@ -3,6 +3,7 @@ package com.romisspa.app.presentation.screens.reserva
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.romisspa.app.domain.model.Cita
+import com.romisspa.app.domain.model.Cliente
 import com.romisspa.app.domain.model.Empleado
 import com.romisspa.app.domain.model.Servicio
 import com.romisspa.app.domain.usecase.SpaUseCases
@@ -27,9 +28,13 @@ class ReservaViewModel(
     private val _empleadosAvailable = MutableStateFlow<List<Empleado>>(emptyList())
     val empleadosAvailable = _empleadosAvailable.asStateFlow()
 
+    private val _clientesAvailable = MutableStateFlow<List<Cliente>>(emptyList())
+    val clientesAvailable = _clientesAvailable.asStateFlow()
+
     init {
         loadServicios()
         loadEmpleados()
+        loadClientes()
     }
 
     private fun loadServicios() {
@@ -52,6 +57,25 @@ class ReservaViewModel(
                 EventBus.send(UiEvent.Error("Error al cargar empleados: ${e.message}"))
             }
         }
+    }
+
+    private fun loadClientes() {
+        viewModelScope.launch {
+            try {
+                val clientes = useCases.getClientes()
+                _clientesAvailable.value = clientes
+            } catch (e: Exception) {
+                EventBus.send(UiEvent.Error("Error al cargar clientes: ${e.message}"))
+            }
+        }
+    }
+
+    fun onIsNuevoClienteChange(isNuevo: Boolean) {
+        _uiState.update { it.copy(isNuevoCliente = isNuevo, clienteNombre = "", clienteTelefono = "") }
+    }
+
+    fun onClienteExistenteSelected(cliente: Cliente) {
+        _uiState.update { it.copy(clienteNombre = cliente.nombre, clienteTelefono = cliente.telefono) }
     }
 
     fun onNombreChange(value: String) {

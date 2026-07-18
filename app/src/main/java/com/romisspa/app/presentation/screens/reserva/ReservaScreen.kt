@@ -143,37 +143,87 @@ fun ReservaScreen(
                 // ── Sección: Datos del cliente ────────────────────────
                 SectionHeader(title = "Datos del Cliente", icon = Icons.Default.Person)
 
-                SpaTextField(
-                    value = uiState.clienteNombre,
-                    onValueChange = { nuevoTexto ->
-                        val tieneNumeros = nuevoTexto.any { char -> char.isDigit() }
-                        nombreError = if (tieneNumeros) "El nombre no puede contener números." else null
-                        viewModel.onNombreChange(nuevoTexto)
-                    },
-                    label = "Nombre completo",
-                    isError = nombreError != null,
-                    supportingText = nombreError,
-                    leadingIcon = { Icon(Icons.Default.Person, null, tint = RoseGold) }
-                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = uiState.isNuevoCliente,
+                        onClick = { viewModel.onIsNuevoClienteChange(true) },
+                        label = { Text("Nuevo Cliente") },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = RoseGold.copy(alpha = 0.2f),
+                            selectedLabelColor = RoseGold
+                        )
+                    )
+                    FilterChip(
+                        selected = !uiState.isNuevoCliente,
+                        onClick = { viewModel.onIsNuevoClienteChange(false) },
+                        label = { Text("Cliente Existente") },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = RoseGold.copy(alpha = 0.2f),
+                            selectedLabelColor = RoseGold
+                        )
+                    )
+                }
 
-                SpaTextField(
-                    value = uiState.clienteTelefono,
-                    onValueChange = { nuevoTexto ->
-                        val soloNumeros = nuevoTexto.all { char -> char.isDigit() }
-                        if (soloNumeros && nuevoTexto.length <= 9) {
-                            viewModel.onTelefonoChange(nuevoTexto)
-                            telefonoError = if (nuevoTexto.length < 9) {
-                                "El número celular debe tener exactamente 9 dígitos."
-                            } else {
-                                null
+                if (uiState.isNuevoCliente) {
+                    SpaTextField(
+                        value = uiState.clienteNombre,
+                        onValueChange = { nuevoTexto ->
+                            val tieneNumeros = nuevoTexto.any { char -> char.isDigit() }
+                            nombreError = if (tieneNumeros) "El nombre no puede contener números." else null
+                            viewModel.onNombreChange(nuevoTexto)
+                        },
+                        label = "Nombre completo",
+                        isError = nombreError != null,
+                        supportingText = nombreError,
+                        leadingIcon = { Icon(Icons.Default.Person, null, tint = RoseGold) }
+                    )
+
+                    SpaTextField(
+                        value = uiState.clienteTelefono,
+                        onValueChange = { nuevoTexto ->
+                            val soloNumeros = nuevoTexto.all { char -> char.isDigit() }
+                            if (soloNumeros && nuevoTexto.length <= 9) {
+                                viewModel.onTelefonoChange(nuevoTexto)
+                                telefonoError = if (nuevoTexto.length < 9) {
+                                    "El número celular debe tener exactamente 9 dígitos."
+                                } else {
+                                    null
+                                }
                             }
-                        }
-                    },
-                    label = "Teléfono",
-                    isError = telefonoError != null,
-                    supportingText = telefonoError,
-                    leadingIcon = { Icon(Icons.Default.Phone, null, tint = RoseGold) }
-                )
+                        },
+                        label = "Teléfono",
+                        isError = telefonoError != null,
+                        supportingText = telefonoError,
+                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = RoseGold) }
+                    )
+                } else {
+                    val clientes by viewModel.clientesAvailable.collectAsState()
+                    DropdownSpa(
+                        label = "Selecciona un cliente",
+                        options = clientes.map { it.nombre },
+                        selected = uiState.clienteNombre,
+                        onSelect = { nombre -> 
+                            val cli = clientes.find { it.nombre == nombre }
+                            if (cli != null) {
+                                viewModel.onClienteExistenteSelected(cli)
+                                nombreError = null
+                                telefonoError = null
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Person, null, tint = RoseGold) }
+                    )
+
+                    if (uiState.clienteTelefono.isNotEmpty()) {
+                        SpaTextField(
+                            value = uiState.clienteTelefono,
+                            onValueChange = {},
+                            label = "Teléfono",
+                            leadingIcon = { Icon(Icons.Default.Phone, null, tint = RoseGold) }
+                        )
+                    }
+                }
 
                 // ── Sección: Servicio ─────────────────────────────────
                 SectionHeader(title = "Servicio", icon = Icons.Default.Spa)

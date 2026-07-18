@@ -1,6 +1,7 @@
 package com.romisspa.app.presentation.screens.caja
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,18 +93,34 @@ fun CajaScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                OutlinedTextField(
-                                    value = input,
-                                    onValueChange = { input = it },
-                                    label = { Text("Monto inicial (S/)") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true,
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = RoseGold,
-                                        unfocusedBorderColor = RoseGoldLight
+                                var showNumpad by remember { mutableStateOf(false) }
+                                Box(modifier = Modifier.weight(1f)) {
+                                    OutlinedTextField(
+                                        value = input,
+                                        onValueChange = { },
+                                        label = { Text("Monto inicial (S/)") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = RoseGold,
+                                            unfocusedBorderColor = RoseGoldLight
+                                        )
                                     )
-                                )
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .background(Color.Transparent)
+                                            .clickable { showNumpad = true }
+                                    )
+                                }
+                                
+                                if (showNumpad) {
+                                    com.romisspa.app.ui.components.NumpadBottomSheet(
+                                        currentValue = if (input.isEmpty()) "0" else input,
+                                        onValueChange = { input = it },
+                                        onDismiss = { showNumpad = false }
+                                    )
+                                }
                                 Spacer(Modifier.width(8.dp))
                                 Button(
                                     onClick = { 

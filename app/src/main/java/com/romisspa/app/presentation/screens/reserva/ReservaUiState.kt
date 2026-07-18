@@ -8,6 +8,7 @@ data class ReservaUiState(
     val fechaSelected: String = "",
     val horaSelected: String = "",
     val notasExtra: String = "",
+    val isNuevoCliente: Boolean = true,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null

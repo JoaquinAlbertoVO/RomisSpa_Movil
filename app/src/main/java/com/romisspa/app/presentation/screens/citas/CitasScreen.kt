@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -167,6 +168,7 @@ fun AtenderDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var expandedPago by remember { mutableStateOf(false) }
     var expandedEmpleado by remember { mutableStateOf(false) }
+    var showNumpad by remember { mutableStateOf(false) }
 
     // Estado de servicios adicionales
     var serviciosAdicionales by remember { mutableStateOf<List<com.romisspa.app.domain.model.Servicio>>(emptyList()) }
@@ -292,26 +294,38 @@ fun AtenderDialog(
                 }
 
                 // Input de Monto
-                OutlinedTextField(
-                    value = monto,
-                    onValueChange = {
-                        if (it.isEmpty() || it.toDoubleOrNull() != null || it.endsWith(".")) {
-                            monto = it; error = null
-                        }
-                    },
-                    label = { Text("Monto cobrado (S/)") },
-                    placeholder = { Text("0.00") },
-                    singleLine = true,
-                    isError = error != null,
-                    supportingText = { if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    prefix = { Text("S/ ") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RoseGold,
-                        unfocusedBorderColor = RoseGoldLight
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = monto,
+                        onValueChange = {},
+                        label = { Text("Monto cobrado (S/)") },
+                        placeholder = { Text("0.00") },
+                        singleLine = true,
+                        isError = error != null,
+                        supportingText = { if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        prefix = { Text("S/ ") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = RoseGold,
+                            unfocusedBorderColor = RoseGoldLight
+                        )
                     )
-                )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Transparent)
+                            .clickable { showNumpad = true }
+                    )
+                }
+
+                if (showNumpad) {
+                    com.romisspa.app.ui.components.NumpadBottomSheet(
+                        currentValue = if (monto.isEmpty()) "0" else monto,
+                        onValueChange = { monto = it; error = null },
+                        onDismiss = { showNumpad = false }
+                    )
+                }
 
                 // Sección de Insumos utilizados
                 Column {
